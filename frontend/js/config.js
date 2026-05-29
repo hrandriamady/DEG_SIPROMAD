@@ -1,5 +1,31 @@
-// ======================== CONFIGURATION ========================
-const API_BASE = "http://127.0.0.1:8000";
+// ======================== CONFIGURATION MULTI-ENVIRONNEMENT ========================
+
+// Détermination de l'URL de l'API en fonction de l'environnement
+const hostname = window.location.hostname;
+const protocol = window.location.protocol;
+const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
+const isRender = hostname.includes('onrender.com');
+
+let API_BASE;
+
+if (isLocal) {
+    // Développement local
+    API_BASE = 'http://127.0.0.1:8000';
+} else if (isRender) {
+    // Production sur Render – à adapter avec le nom de votre service backend
+    API_BASE = 'https://sipromad-api.onrender.com';  // ⚠️ Remplacez par votre vrai URL backend Render
+} else if (hostname.match(/^(\d{1,3}\.){3}\d{1,3}$/)) {
+    // Serveur d'entreprise avec IP fixe
+    API_BASE = `http://${hostname}:8000`;
+} else if (hostname.includes('.local')) {
+    // Serveur d'entreprise avec nom local
+    API_BASE = `http://${hostname}:8000`;
+} else {
+    // Autre (domaine personnalisé, etc.)
+    API_BASE = `${protocol}//${hostname}/api`;
+}
+
+// Variables globales
 let authToken = localStorage.getItem("token");
 let currentUser = null;
 let charts = {};
@@ -37,7 +63,7 @@ const pageLoaders = {
     historique: () => loadAuditLogs(),
     "fournisseurs-dash": () => loadFournisseurs(),
     "projets-dash": () => loadProjets(),
-    "audit-dash": () => { loadAuditLogs(); loadAuditStats(); },
+    "audit-dash": () => loadAuditLogs(),
     utilisateurs: () => loadUsers(),
     parametres: () => { loadSettings(); initSignatureCanvasParam(); loadUserSignature(); },
     recherche: () => searchDocuments(),
@@ -49,3 +75,8 @@ const pageLoaders = {
     pilotage: () => { loadPilotageStats(); initPilotageCharts(); },
     "validation-new": () => { loadPendingDocuments(); loadUserSignatureForValidation(); }
 };
+
+// Exposer la configuration globalement
+window.API_BASE = API_BASE;
+console.log(`🌍 Environnement détecté : ${isLocal ? 'Local' : isRender ? 'Render' : 'Entreprise'}`);
+console.log(`🔗 URL de l'API : ${API_BASE}`);

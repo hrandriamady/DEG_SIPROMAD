@@ -146,54 +146,6 @@ async function loadFinanceDashboard() {
     } catch (err) { console.error(err); }
 }
 
-// ======================== FOURNISSEURS ========================
-async function loadFournisseurs() {
-    try {
-        const fournisseurs = await fetchAPI("/api/fournisseurs");
-        const tbody = document.getElementById("fournisseurs-table-body");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-        fournisseurs.forEach(f => {
-            const row = tbody.insertRow();
-            row.insertCell(0).innerHTML = `<div style="font-weight:500">${f.name}</div><div style="font-size:11px">${f.secteur || ""}</div>`;
-            row.insertCell(1).innerText = f.total_documents;
-            row.insertCell(2).innerHTML = `<span style="color:var(--warning)">${f.en_attente}</span>`;
-            row.insertCell(3).innerText = f.valides;
-            row.insertCell(4).innerText = f.avg_delay_days + "j";
-            row.insertCell(5).innerHTML = `<span class="badge badge-success">${f.statut}</span>`;
-        });
-    } catch (err) { console.error(err); }
-}
-
-// ======================== PROJETS ========================
-async function loadProjets() {
-    try {
-        const projets = await fetchAPI("/api/projets");
-        const container = document.getElementById("projets-list");
-        if (!container) return;
-        container.innerHTML = "";
-        projets.forEach(p => {
-            const card = document.createElement("div");
-            card.className = "card";
-            card.style.borderLeft = `4px solid var(--${p.statut === "Terminé" ? "success" : "accent"})`;
-            card.innerHTML = `
-                <div class="card-body">
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-                        <div><div style="font-weight:600;font-size:15px">${p.nom}</div><div style="font-size:12px;color:var(--text-muted)">${p.statut}</div></div>
-                        <span class="badge ${p.statut === "Terminé" ? "badge-success" : "badge-info"}">${p.statut}</span>
-                    </div>
-                    <div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:4px"><span>Avancement</span><span>${p.avancement}%</span></div>
-                    <div class="progress"><div class="progress-fill" style="width:${p.avancement}%;background:var(--accent)"></div></div></div>
-                    <div class="metric-row"><div class="metric-mini"><div class="metric-mini-val">${p.documents}</div><div class="metric-mini-label">Documents</div></div>
-                    <div class="metric-mini"><div class="metric-mini-val">${p.en_attente}</div><div class="metric-mini-label">En attente</div></div>
-                    <div class="metric-mini"><div class="metric-mini-val">${p.documents - p.valides}</div><div class="metric-mini-label">Manquants</div></div></div>
-                </div>
-            `;
-            container.appendChild(card);
-        });
-    } catch (err) { console.error(err); }
-}
-
 // ======================== AUDIT ========================
 async function loadAuditLogs() {
     try {
@@ -203,25 +155,15 @@ async function loadAuditLogs() {
         tbody.innerHTML = "";
         logs.forEach(log => {
             const row = tbody.insertRow();
+            // Colonne 0 : Horodatage
             row.insertCell(0).innerHTML = new Date(log.created_at).toLocaleString();
+            // Colonne 1 : Utilisateur
             row.insertCell(1).innerHTML = `<div style="display:flex;align-items:center;gap:6px"><div class="avatar" style="width:24px;height:24px;background:${log.user_avatar}">${log.user_initials}</div><span>${log.user_name}</span></div>`;
+            // Colonne 2 : Action
             const actionClass = log.action === "VALIDATION" ? "badge-success" : (log.action === "REJET" ? "badge-danger" : "badge-info");
             row.insertCell(2).innerHTML = `<span class="badge ${actionClass}">${log.action}</span>`;
-            row.insertCell(3).innerText = log.document_title || "—";
-            row.insertCell(4).innerText = log.ip_address || "—";
-            row.insertCell(5).innerHTML = `<span style="color:var(--success)">✓ OK</span>`;
+            // Colonne 3 : Statut
+            row.insertCell(3).innerHTML = `<span style="color:var(--success)">✓ OK</span>`;
         });
-    } catch (err) { console.error(err); }
-}
-
-async function loadAuditStats() {
-    try {
-        const stats = await fetchAPI("/api/audit/stats");
-        const auditActions = document.getElementById("audit-actions");
-        const auditUsers = document.getElementById("audit-users");
-        const auditPlanifies = document.getElementById("audit-planifies");
-        if (auditActions) auditActions.innerText = stats.total_actions;
-        if (auditUsers) auditUsers.innerText = stats.total_users;
-        if (auditPlanifies) auditPlanifies.innerText = stats.audits_planifies;
     } catch (err) { console.error(err); }
 }

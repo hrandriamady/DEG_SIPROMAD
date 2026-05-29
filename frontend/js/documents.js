@@ -1,4 +1,5 @@
 // ======================== DOCUMENTS ========================
+
 async function loadAllDocuments() {
     try {
         const docs = await fetchAPI("/api/documents?limit=100");
@@ -8,142 +9,356 @@ async function loadAllDocuments() {
         docs.forEach(doc => {
             const row = tbody.insertRow();
             row.onclick = () => { currentDocId = doc.id; showPage("consulter"); };
-            row.insertCell(0).innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div class="file-icon pdf">${(doc.file_type || "PDF").toUpperCase()}</div><div><div style="font-weight:500">${doc.title}</div><div style="font-size:11px;color:gray">${doc.filename || ""}</div></div></div>`;
-            row.insertCell(1).innerHTML = doc.category || "";
-            row.insertCell(2).innerHTML = `<span class="badge badge-info">${doc.department || ""}</span>`;
-            row.insertCell(3).innerHTML = doc.supplier || "—";
-            const statusClass = doc.status === "en_attente" ? "badge-warning" : (doc.status === "valide" ? "badge-success" : "badge-info");
-            row.insertCell(4).innerHTML = `<span class="badge ${statusClass}">${doc.status === "en_attente" ? "En attente" : (doc.status === "valide" ? "Validé" : "En validation")}</span>`;
-            row.insertCell(5).innerHTML = new Date(doc.uploaded_at).toLocaleDateString("fr");
-            row.insertCell(6).innerHTML = doc.file_size_kb ? `${doc.file_size_kb} KB` : "—";
-            row.insertCell(7).innerHTML = `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();viewDocument(${doc.id})">Voir</button>`;
+            row.insertCell(0).innerHTML = `<div style="display:flex;align-items:center;gap:10px"><div class="file-icon pdf">${(doc.file_type || "PDF").toUpperCase()}</div><div><div style="font-weight:500">${doc.title}</div></div></div>`;
+            row.insertCell(1).innerHTML = `<span class="badge badge-info">${doc.department || ""}</span>`;
+            const statusClass = doc.status === "en_attente" ? "badge-warning" : (doc.status === "signe" ? "badge-success" : "badge-info");
+            const statusText = doc.status === "en_attente" ? "En attente" : (doc.status === "signe" ? "Signé" : "En validation");
+            row.insertCell(2).innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
+            row.insertCell(3).innerHTML = new Date(doc.uploaded_at).toLocaleDateString("fr");
+            row.insertCell(4).innerHTML = `<button class="btn btn-outline btn-sm" onclick="event.stopPropagation();viewDocument(${doc.id})">Voir</button>`;
         });
     } catch (err) { console.error(err); }
 }
 
 window.viewDocument = (id) => { currentDocId = id; showPage("consulter"); };
 
+// ======================== CIRCUIT DE VALIDATION ========================
+
+function displayValidationCircuit(validators, docStatus, uploadedBy, uploadedAt) {
+    const container = document.getElementById("doc-validation-circuit");
+    if (!container) return;
+    
+    const depositStep = {
+        name: uploadedBy?.full_name || "Déposant",
+        firstName: (uploadedBy?.full_name || "Déposant").split(' ')[0],
+        signed: true,
+        signed_at: uploadedAt,
+        isDeposit: true
+    };
+    
+    const allSteps = [depositStep, ...validators];
+    
+    let activeStepIndex = 0;
+    for (let i = 0; i < allSteps.length; i++) {
+        if (!allSteps[i].signed) {
+            activeStepIndex = i;
+            break;
+        }
+        activeStepIndex = allSteps.length;
+    }
+    
+    const allSigned = allSteps.every(v => v.signed);
+    const currentStep = allSteps.filter(v => v.signed).length;
+    
+    let html = `
+        <div style="margin-bottom: 15px; overflow-x: auto; padding-bottom: 8px;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; min-width: 400px;">
+    `;
+    
+    allSteps.forEach((step, index) => {
+        const isCompleted = step.signed;
+        const isActive = !isCompleted && (index === activeStepIndex);
+        const isLast = index === allSteps.length - 1;
+        
+        let stepColor = "";
+        let icon = "";
+        
+        let displayName = step.firstName || step.name?.split(' ')[0] || step.name || "?";
+        if (displayName.length > 12) displayName = displayName.substring(0, 10) + '...';
+        
+        if (isCompleted) {
+            stepColor = "#10b981";
+            icon = "✓";
+        } else if (isActive) {
+            stepColor = "#3b82f6";
+            icon = "⏳";
+        } else {
+            stepColor = "#e2e8f0";
+            icon = "○";
+        }
+        
+        let statusText = "";
+        let statusColor = "";
+        
+        if (step.isDeposit) {
+            statusText = "Terminé";
+            statusColor = "#10b981";
+        } else if (isCompleted) {
+            statusText = "Signé";
+            statusColor = "#10b981";
+        } else if (isActive) {
+            statusText = "En cours";
+            statusColor = "#3b82f6";
+        } else {
+            statusText = "En attente";
+            statusColor = "#94a3b8";
+        }
+        
+        html += `
+            <div style="flex: 1; text-align: center; min-width: 80px;">
+                <div style="position: relative;">
+                    <div style="
+                        width: 36px;
+                        height: 36px;
+                        margin: 0 auto 6px auto;
+                        border-radius: 50%;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-weight: bold;
+                        font-size: ${isCompleted ? '16px' : '14px'};
+                        background: ${stepColor};
+                        color: ${isCompleted || isActive ? 'white' : '#64748b'};
+                        border: ${isActive ? '2px solid #3b82f6' : 'none'};
+                        box-shadow: ${isActive ? '0 0 0 2px rgba(59,130,246,0.2)' : 'none'};
+                    ">
+                        ${icon}
+                    </div>
+                    <div style="font-weight: 500; font-size: 11px; color: ${isActive ? '#1a73e8' : '#475569'}; line-height: 1.3;">
+                        ${displayName}
+                    </div>
+                    <div style="font-size: 9px; margin-top: 4px; font-weight: 500; color: ${statusColor};">
+                        ${statusText}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        if (!isLast) {
+            html += `
+                <div style="flex: 0 0 20px; text-align: center; margin-bottom: 24px;">
+                    <svg width="14" height="10" viewBox="0 0 24 24" fill="none" stroke="${isCompleted ? '#10b981' : '#cbd5e1'}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                    </svg>
+                </div>
+            `;
+        }
+    });
+    
+    html += `
+            </div>
+        </div>
+        <div style="margin-top: 10px; padding: 8px 12px; background: #f8fafc; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <span style="font-size: 10px; color: var(--text-muted);">Statut</span>
+                <div style="font-weight: 500; color: ${allSigned ? '#10b981' : '#3b82f6'}; font-size: 11px;">
+                    ${allSigned ? '✅ Document complété' : `⏳ Étape ${currentStep}/${allSteps.length}`}
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+async function loadValidationCircuit(docId) {
+    try {
+        const doc = await fetchAPI(`/api/documents/${docId}`);
+        const signatures = await fetchAPI(`/api/documents/${docId}/signatures`);
+        
+        // ✅ CORRECTION: Récupérer le vrai nom du déposant depuis l'API users
+        let uploadedByName = "Déposant";
+        let uploadedByFirstName = "Déposant";
+        
+        try {
+            const uploader = await fetchAPI(`/api/users/${doc.uploaded_by}`);
+            if (uploader && uploader.full_name) {
+                uploadedByName = uploader.full_name;
+                uploadedByFirstName = uploader.full_name.split(' ')[0];
+            } else if (doc.uploaded_by_name) {
+                uploadedByName = doc.uploaded_by_name;
+                uploadedByFirstName = doc.uploaded_by_name.split(' ')[0];
+            }
+        } catch (e) {
+            console.warn("Impossible de récupérer le nom du déposant via API, utilisation de doc.uploaded_by_name");
+            if (doc.uploaded_by_name) {
+                uploadedByName = doc.uploaded_by_name;
+                uploadedByFirstName = doc.uploaded_by_name.split(' ')[0];
+            }
+        }
+        
+        const uploadedBy = {
+            full_name: uploadedByName,
+            first_name: uploadedByFirstName,
+            id: doc.uploaded_by
+        };
+        
+        // Récupérer la liste des IDs des validateurs
+        const validatorIds = doc.doc_metadata?.validators || [];
+        
+        if (validatorIds.length === 0) {
+            document.getElementById("doc-validation-circuit").innerHTML = `
+                <div style="text-align: center; padding: 12px; color: var(--text-muted); background: #f8fafc; border-radius: 6px;">
+                    <span style="font-size: 11px;">📋 Aucun validateur désigné</span>
+                </div>
+            `;
+            return;
+        }
+        
+        // ✅ CORRECTION: Construire la liste des validateurs avec leurs vrais noms
+        const validators = [];
+        
+        for (let i = 0; i < validatorIds.length; i++) {
+            const validatorId = validatorIds[i];
+            const signature = signatures.find(s => s.user_id == validatorId);
+            
+            let validatorName = `Validateur ${i + 1}`;
+            let validatorFirstName = `V${i + 1}`;
+            
+            // Essayer de récupérer depuis la signature d'abord (contient déjà le nom)
+            if (signature && signature.full_name) {
+                validatorName = signature.full_name;
+                validatorFirstName = signature.full_name.split(' ')[0];
+                console.log(`Validateur ${i+1} trouvé dans signature:`, validatorName);
+            } else {
+                // Sinon, récupérer depuis l'API users
+                try {
+                    const user = await fetchAPI(`/api/users/${validatorId}`);
+                    if (user && user.full_name) {
+                        validatorName = user.full_name;
+                        validatorFirstName = user.full_name.split(' ')[0];
+                        console.log(`Validateur ${i+1} récupéré depuis API:`, validatorName);
+                    }
+                } catch (e) {
+                    console.warn(`Impossible de récupérer l'utilisateur ${validatorId}:`, e);
+                }
+            }
+            
+            validators.push({
+                id: validatorId,
+                name: validatorName,
+                firstName: validatorFirstName,
+                signed: !!signature,
+                signed_at: signature?.signed_at
+            });
+        }
+        
+        console.log("Déposant:", uploadedBy);
+        console.log("Validateurs:", validators);
+        
+        displayValidationCircuit(validators, doc.status, uploadedBy, doc.uploaded_at);
+        
+    } catch (err) {
+        console.error("Erreur chargement circuit:", err);
+        const container = document.getElementById("doc-validation-circuit");
+        if (container) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 12px; color: var(--danger); background: #fef2f2; border-radius: 6px;">
+                    <span style="font-size: 11px;">⚠️ Impossible de charger le circuit</span>
+                </div>
+            `;
+        }
+    }
+}
+// ======================== CHARGEMENT DES DÉTAILS ========================
+// ======================== CHARGEMENT DES DÉTAILS ========================
+
 async function loadDocumentDetails() {
     if (!currentDocId) return;
     try {
         const doc = await fetchAPI(`/api/documents/${currentDocId}`);
-        document.getElementById("doc-view-title").innerText = doc.title;
-        document.getElementById("doc-view-meta").innerHTML = `${doc.department || ""} · Déposé le ${new Date(doc.uploaded_at).toLocaleDateString("fr")}`;
-        const statusBadge = doc.status === "en_attente" ? "badge-warning" : (doc.status === "valide" ? "badge-success" : "badge-info");
-        document.getElementById("doc-status-badge").innerHTML = `<span class="badge ${statusBadge}">${doc.status === "en_attente" ? "En attente" : (doc.status === "valide" ? "Validé" : "En validation")}</span>`;
+        
+        const statusClass = doc.status === "en_attente" ? "badge-warning" : (doc.status === "signe" ? "badge-success" : "badge-info");
+        const statusText = doc.status === "en_attente" ? "En attente" : (doc.status === "signe" ? "Signé" : "En validation");
+        const statusBadge = document.getElementById("doc-status-badge");
+        if (statusBadge) {
+            statusBadge.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
+        }
 
         const metaTable = document.getElementById("doc-metadata-table");
         if (metaTable) {
             metaTable.innerHTML = `
-                <tr><td style="color:gray">Type</td><td style="text-align:right">${doc.category || ""}</td></tr>
                 <tr><td style="color:gray">Service</td><td style="text-align:right">${doc.department || ""}</td></tr>
-                <--<tr><td style="color:gray">Fournisseur</td><td style="text-align:right">${doc.supplier || "—"}</td></tr>
-                <tr><td style="color:gray">Montant</td><td style="text-align:right;font-weight:bold">${doc.amount ? doc.amount + " MGA" : "—"}</td></tr>
-                <tr><td style="color:gray">Taille</td><td style="text-align:right">${doc.file_size_kb ? doc.file_size_kb + " KB" : "—"}</td></tr> -->
+                <tr><td style="color:gray">Déposé par</td><td style="text-align:right">${doc.uploaded_by_name || "—"}</td></tr>
+                <tr><td style="color:gray">Date dépôt</td><td style="text-align:right">${new Date(doc.uploaded_at).toLocaleString("fr")}</td></tr>
             `;
         }
 
+        await loadValidationCircuit(currentDocId);
+
         const previewContainer = document.getElementById("pdf-preview");
         if (!previewContainer) return;
+        
         const fileType = (doc.file_type || "").toLowerCase();
+        
         try {
-            const blob = await fetchFileBlob(`/api/documents/${currentDocId}/file`);
-            const url = URL.createObjectURL(blob);
             if (fileType === "pdf") {
-                    // Try to fetch signatures and render PDF with overlays using PDF.js if available
-                    try {
-                        const sigs = await fetchAPI(`/api/documents/${currentDocId}/signatures`);
-                        if (window.pdfjsLib && sigs && Array.isArray(sigs)) {
-                            // render first page with overlays and simple paging controls
-                            const container = previewContainer;
-                            container.innerHTML = `
-                                <div id="doc-view-controls" style="display:flex;gap:8px;align-items:center;margin-bottom:8px;">
-                                    <button id="doc-prev-page" class="btn btn-sm">Préc</button>
-                                    <span id="doc-page-indicator">Page 1 / 1</span>
-                                    <button id="doc-next-page" class="btn btn-sm">Suiv</button>
-                                </div>
-                                <div id="doc-pdf-container" style="position:relative;width:100%;"></div>
-                            `;
-                            const pdfBlob = await fetchFileBlob(`/api/documents/${currentDocId}/file`);
-                            const pdfUrl = URL.createObjectURL(pdfBlob);
-                            const loadingTask = pdfjsLib.getDocument(pdfUrl);
-                            const pdfDoc = await loadingTask.promise;
-                            let currentPage = 1;
-                            const totalPages = pdfDoc.numPages;
-                            const containerCanvas = document.getElementById('doc-pdf-container');
-
-                            async function renderPage(pageNum) {
-                                const page = await pdfDoc.getPage(pageNum);
-                                containerCanvas.innerHTML = '';
-                                const canvas = document.createElement('canvas');
-                                canvas.id = 'doc-pdf-canvas';
-                                containerCanvas.appendChild(canvas);
-                                const context = canvas.getContext('2d');
-                                const viewport = page.getViewport({ scale: 1 });
-                                const containerWidth = containerCanvas.clientWidth || 800;
-                                const scale = containerWidth / viewport.width;
-                                const scaledViewport = page.getViewport({ scale });
-                                canvas.width = scaledViewport.width;
-                                canvas.height = scaledViewport.height;
-                                canvas.style.width = scaledViewport.width + 'px';
-                                canvas.style.height = scaledViewport.height + 'px';
-                                await page.render({ canvasContext: context, viewport: scaledViewport }).promise;
-                                // overlay signatures for this page
-                                const pageSigs = sigs.filter(s => Number(s.page) === Number(pageNum));
-                                pageSigs.forEach(s => {
-                                    if (!s.signature_data) return;
-                                    const img = document.createElement('img');
-                                    img.src = s.signature_data;
-                                    img.style.position = 'absolute';
-                                    img.style.width = '120px';
-                                    img.style.height = 'auto';
-                                    img.style.zIndex = 1200;
-                                    img.title = s.full_name || 'Signature';
-                                    img.className = 'doc-signature-overlay';
-                                    containerCanvas.appendChild(img);
-                                    img.onload = () => {
-                                        const x = Number(s.x) * scale;
-                                        const y = Number(s.y) * scale;
-                                        const imgWidth = img.width;
-                                        const imgHeight = img.height;
-                                        img.style.left = `${Math.max(0, Math.min(canvas.width - imgWidth, x - imgWidth / 2))}px`;
-                                        img.style.top = `${Math.max(0, Math.min(canvas.height - imgHeight, canvas.height - y - imgHeight / 2))}px`;
-                                    };
-                                });
-                                document.getElementById('doc-page-indicator').innerText = `Page ${pageNum} / ${totalPages}`;
-                                document.getElementById('doc-prev-page').disabled = pageNum <= 1;
-                                document.getElementById('doc-next-page').disabled = pageNum >= totalPages;
-                            }
-
-                            document.getElementById('doc-prev-page').addEventListener('click', () => { if (currentPage>1) { currentPage--; renderPage(currentPage); } });
-                            document.getElementById('doc-next-page').addEventListener('click', () => { if (currentPage<totalPages) { currentPage++; renderPage(currentPage); } });
-                            await renderPage(currentPage);
-                            URL.revokeObjectURL(pdfUrl);
-                        } else if (sigs && sigs.length === 0) {
-                            // no signatures, fallback to plain iframe
-                            previewContainer.innerHTML = `<iframe src="${url}" width="100%" height="550px" style="border:none;"></iframe>`;
-                        } else {
-                            previewContainer.innerHTML = `<iframe src="${url}" width="100%" height="550px" style="border:none;"></iframe>`;
-                        }
-                    } catch (e) {
-                        console.error('Rendering signed PDF failed:', e);
-                        previewContainer.innerHTML = `<iframe src="${url}" width="100%" height="550px" style="border:none;"></iframe>`;
+                // Afficher un indicateur de chargement
+                previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;">Chargement du document...</div>`;
+                
+                // Récupérer le token
+                const token = localStorage.getItem("token");
+                
+                console.log("Token trouvé:", token ? "Oui" : "Non");
+                
+                if (!token) {
+                    previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;color:var(--danger);">⚠️ Veuillez vous reconnecter</div>`;
+                    return;
+                }
+                
+                const url = `${API_BASE}/api/documents/${currentDocId}/signed?t=${Date.now()}`;
+                console.log("URL appelée:", url);
+                
+                const response = await fetch(url, {
+                    headers: { 
+                        "Authorization": `Bearer ${token}`
                     }
-                } else if (["jpg", "jpeg", "png", "gif", "webp"].includes(fileType)) {
-                previewContainer.innerHTML = `<img src="${url}" style="max-width:100%; max-height:550px; display:block; margin:auto;">`;
-            } else if (["txt", "csv", "log"].includes(fileType)) {
-                const text = await blob.text();
-                previewContainer.innerHTML = `<pre style="white-space:pre-wrap; background:#f5f5f5; padding:10px;">${escapeHtml(text)}</pre>`;
+                });
+                
+                console.log("Statut réponse:", response.status);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error("Erreur réponse:", errorText);
+                    
+                    if (response.status === 401) {
+                        previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;color:var(--danger);">🔒 Session expirée, veuillez vous reconnecter</div>`;
+                    } else {
+                        previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;color:var(--danger);">❌ Erreur ${response.status}: Impossible de charger le document</div>`;
+                    }
+                    return;
+                }
+                
+                const blob = await response.blob();
+                console.log("Taille du blob:", blob.size, "bytes");
+                
+                if (blob.size === 0) {
+                    previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;color:var(--danger);">📄 Le document est vide</div>`;
+                    return;
+                }
+                
+                const blobUrl = URL.createObjectURL(blob);
+                previewContainer.innerHTML = `<iframe src="${blobUrl}" style="width:100%;height:70vh;border:none;"></iframe>`;
+                
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 30000);
+                
+            } else if (["jpg", "jpeg", "png", "gif", "webp"].includes(fileType)) {
+                const token = localStorage.getItem("token");
+                const response = await fetch(`${API_BASE}/api/documents/${currentDocId}/file`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                previewContainer.innerHTML = `<img src="${url}" style="width:100%;height:auto;max-height:70vh;object-fit:contain;">`;
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             } else {
-                previewContainer.innerHTML = `<div class="pdf-page"><a href="${url}" download="${doc.filename}" class="btn btn-outline">Télécharger le fichier</a> (aperçu non disponible)</div>`;
+                const token = localStorage.getItem("token");
+                const response = await fetch(`${API_BASE}/api/documents/${currentDocId}/file`, {
+                    headers: { "Authorization": `Bearer ${token}` }
+                });
+                const blob = await response.blob();
+                const url = URL.createObjectURL(blob);
+                previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;"><a href="${url}" download="${doc.filename}" class="btn btn-outline">📥 Télécharger le fichier</a></div>`;
+                setTimeout(() => URL.revokeObjectURL(url), 10000);
             }
-            setTimeout(() => URL.revokeObjectURL(url), 10000);
         } catch (err) {
-            previewContainer.innerHTML = `<div class="pdf-page">Impossible d'afficher le document</div>`;
+            console.error("Erreur détaillée:", err);
+            previewContainer.innerHTML = `<div style="height:70vh;display:flex;align-items:center;justify-content:center;color:var(--danger);">⚠️ Erreur: ${err.message}</div>`;
         }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+        console.error("Erreur loadDocumentDetails:", err); 
+    }
 }
-
 window.approveDocument = async function (docId) {
     try {
         await fetchAPI(`/api/documents/${docId}/validate`, { method: "PUT", body: JSON.stringify({ action: "approuve", comment: "Validé" }) });

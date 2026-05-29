@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-<title>SIPROMAD GED — Gestion Électronique de Documents</title>
+<title>Gestion Électronique de Documents</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=Syne:wght@600;700;800&display=swap" rel="stylesheet">
@@ -18,7 +18,6 @@
 
 <!-- SPLASH -->
 <div id="splash">
-
   <div class="splash-bar"><div class="splash-fill"></div></div>
 </div>
 
@@ -31,7 +30,6 @@
         SIPROMAD GED
       </div>
     </div>
-
     <div class="login-title"><center>Connexion sécurisée</center></div>
     <br>
     <div class="form-group">
@@ -52,7 +50,7 @@
   <div id="sidebar">
     <div class="sidebar-header">
       <div class="sidebar-logo-icon">S</div>
-      <div class="sidebar-title">SIPROMAD<span>v1.0 — Simulation</span></div>
+      <div class="sidebar-title">SIPROMAD</div>
     </div>
     <div class="sidebar-user">
       <div class="sidebar-user-card" onclick="showPage('profil')">
@@ -73,12 +71,21 @@
         </div>
         <div class="nav-item" onclick="showPage('workflow-dash')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5" stroke-width="1.8"/><circle cx="18" cy="6" r="2.5" stroke-width="1.8"/><circle cx="18" cy="18" r="2.5" stroke-width="1.8"/><path d="M8.5 10.5L15.5 7M8.5 13.5L15.5 17" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Sage <span class="badge">7</span>
+          Sage <span class=""></span>
         </div>
         
       </div>
       <div class="nav-section">
         <div class="nav-section-title">Documents</div>
+        <div id="nav-validation" class="nav-item" onclick="showPage('validation')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.8"/></svg>
+          File de validation <span class="" id="validation-badge"></span>
+        </div>
+        <!-- NOUVEAU MENU : Validation & Signature -->
+        <div id="nav-validation-new" class="nav-item" onclick="showPage('validation-new')">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke-width="1.8"/><path d="M12 6v6l4 2" stroke-width="1.8" stroke-linecap="round"/></svg>
+          Validation & Signature
+        </div>
         <div id="nav-upload" class="nav-item" onclick="showPage('upload')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Déposer un document
@@ -86,18 +93,6 @@
         <div id="nav-documents" class="nav-item" onclick="showPage('documents')">
           <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke-width="1.8"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" stroke-width="1.8" stroke-linecap="round"/></svg>
           Mes Documents
-        </div>
-      </div>
-      <div class="nav-section">
-        <div class="nav-section-title">Validation</div>
-        <div id="nav-validation" class="nav-item" onclick="showPage('validation')">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="3" y="3" width="18" height="18" rx="3" stroke-width="1.8"/></svg>
-          File de validation <span class="badge" id="validation-badge">12</span>
-        </div>
-        <!-- NOUVEAU MENU : Validation & Signature -->
-        <div id="nav-validation-new" class="nav-item" onclick="showPage('validation-new')">
-          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20A10 10 0 0012 2z" stroke-width="1.8"/><path d="M12 6v6l4 2" stroke-width="1.8" stroke-linecap="round"/></svg>
-          Validation & Signature
         </div>
       </div>
       <div class="nav-section">
@@ -156,18 +151,13 @@
 
 <!-- ======================= PAGE: DASHBOARD ======================= -->
 <div class="page active" id="page-dashboard">
-  <div class="page-header">
-    <div><h1>Vue d'ensemble</h1><p>Bienvenue, <span id="welcome-name"></span> — <span id="current-date"></span></p></div>
-  </div>
+  <span id="welcome-name"></span><span id="current-date"></span>
   <div class="stats-grid">
     <div class="stat-card blue"><div class="stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke-width="2"/><path d="M14 2v6h6" stroke-width="2"/></svg></div><div><div class="stat-value" id="stat-total">0</div><div class="stat-label">Documents totaux</div></div><div class="stat-change up">↑ +12% ce mois</div></div>
     <div class="stat-card orange"><div class="stat-icon orange"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke-width="2"/><path d="M12 8v4l3 3" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="stat-value" id="stat-attente">0</div><div class="stat-label">En attente validation</div></div><div class="stat-change down">↑ +8 aujourd'hui</div></div>
     <div class="stat-card green"><div class="stat-icon green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="10" stroke-width="2"/></svg></div><div><div class="stat-value" id="stat-valides">0</div><div class="stat-label">Documents validés</div></div><div class="stat-change up">↑ +95.2% taux validation</div></div>
     <div class="stat-card red"><div class="stat-icon red"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke-width="2"/><path d="M12 9v4M12 17h.01" stroke-width="2" stroke-linecap="round"/></svg></div><div><div class="stat-value" id="stat-retard">0</div><div class="stat-label">En retard</div></div><div class="stat-change down">↓ -3 vs semaine dernière</div></div>
-    <div class="stat-card purple"><div class="stat-icon purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke-width="2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg></div><div><div class="stat-value" id="stat-users">0</div><div class="stat-label">Utilisateurs actifs</div></div><div class="stat-change up">↑ +3 ce mois</div></div>
-    <div class="stat-card blue"><div class="stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke-width="2"/></svg></div><div><div class="stat-value" id="stat-delai">0j</div><div class="stat-label">Délai moyen validation</div></div><div class="stat-change up">↓ -1.3j vs objectif</div></div>
   </div>
-
   <div class="grid-70-30" style="margin-bottom:20px">
     <div class="card">
       <div class="card-header">
@@ -267,14 +257,11 @@
 </div>
 <!-- ======================= PAGE: AUDIT ======================= -->
 <div class="page" id="page-audit-dash">
-  <div class="page-header"><div><p>Traçabilité complète des actions système</p></div></div>
-  <div class="stats-grid" style="grid-template-columns:repeat(4,1fr)">
-  </div>
   <div class="card" style="margin-top:20px">
     <div class="card-header"><div class="card-title">Journal d'audit — Dernières actions</div></div>
     <div class="card-body" style="padding-top:12px">
       <table class="data-table">
-        <thead><tr><th>Horodatage</th><th>Utilisateur</th><th>Action</th><th>Document</th><th>IP</th><th>Statut</th></tr></thead>
+        <thead><tr><th>Horodatage</th><th>Utilisateur</th><th>Action</th><th>Statut</th></tr></thead>
         <tbody id="audit-table-body"></tbody>
       </table>
     </div>
@@ -288,14 +275,14 @@
       <select id="filter-type" class="filter-select"><option value="">Tous les types</option><option>PDF</option><option>Word</option><option>Excel</option><option>Image</option></select>
       <select id="filter-service" class="filter-select"><option value="">Tous les services</option><option>Finance</option><option>RH</option><option>Achat</option><option>Projets</option></select>
       <select id="filter-statut" class="filter-select"><option value="">Tous les statuts</option><option>en_attente</option><option>valide</option><option>rejete</option><option>archive</option></select>
-      <select id="filter-fournisseur" class="filter-select"><option value="">Tous les fournisseurs</option><option>TECNO Madagascar</option><option>AVENIR Constructions</option><option>AGRI Services</option></select>
+      <!--select id="filter-fournisseur" class="filter-select"><option value="">Tous les fournisseurs</option><option>TECNO Madagascar</option><option>AVENIR Constructions</option><option>AGRI Services</option></select-->
       <button class="btn btn-primary btn-sm" onclick="loadAllDocuments()">Filtrer</button>
     </div>
   </div>
   <div class="card">
     <div class="card-body" style="padding-top:8px">
       <table class="data-table">
-        <thead><tr><th>Document</th><th>Catégorie</th><th>Service</th><th>Fournisseur</th><th>Statut</th><th>Date</th><th>Taille</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Document</th><th>Service</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
         <tbody id="docs-table-body"></tbody>
       </table>
     </div>
@@ -307,7 +294,6 @@
   <div class="grid-70-30">
     <div>
       <div class="card" style="margin-bottom:20px">
-        <div class="card-header"><div class="card-title">Informations du document</div></div>
         <div class="card-body">
           <div class="form-row" style="margin-bottom:16px">
             <div class="field" style="flex:1"><label>Titre du document *</label><input type="text" id="doc-title" placeholder="Ex: Facture TECNO #4521"></div>
@@ -335,36 +321,49 @@
     </div>
   </div>
 </div>
-
 <!-- ======================= PAGE: CONSULTER ======================= -->
 <div class="page" id="page-consulter">
-  <div class="page-header">
-    <div style="display:flex;align-items:center;gap:12px">
-      <button class="btn btn-outline btn-sm" onclick="history.back()">← Retour</button>
-      <div><h1 id="doc-view-title">Consultation document</h1><p id="doc-view-meta"></p></div>
-    </div>
-    <div style="display:flex;gap:8px"><button class="btn btn-outline btn-sm" id="download-doc" onclick="downloadDocument()">Télécharger</button></div>
-  </div>
   <div class="grid-70-30">
-    <div class="card" style="margin-bottom:20px">
-      <div class="card-header"><div class="card-title">Aperçu du document</div></div>
-      <div class="card-body"><div class="pdf-viewer" id="pdf-preview"><div class="pdf-page">Aperçu non disponible (simulation)</div></div></div>
+    <div class="card" style="margin-bottom:20px; padding:0; overflow:hidden;">
+      <div class="card-body" style="padding:0;">
+        <div class="pdf-viewer" id="pdf-preview" style="height:70vh; width:100%;">
+          <div class="pdf-page" style="height:100%; display:flex; align-items:center; justify-content:center;">Aperçu non disponible (simulation)</div>
+        </div>
+      </div>
     </div>
     <div>
+      <!-- Circuit de validation -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title">🔄 Circuit de validation</div>
+        </div>
+        <div class="card-body" id="doc-validation-circuit">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted);">
+            Chargement du circuit...
+          </div>
+        </div>
+      </div>
+      
+      <!-- Statut du document -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-body">
-          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px"><span class="badge" id="doc-status-badge"></span></div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+            <span class="badge" id="doc-status-badge"></span>
+          </div>
           <div class="workflow-steps" id="doc-workflow-steps"></div>
         </div>
       </div>
+      
+      <!-- Métadonnées -->
       <div class="card" style="margin-bottom:16px">
         <div class="card-header"><div class="card-title">Métadonnées</div></div>
-        <div class="card-body"><table style="width:100%;font-size:13px" id="doc-metadata-table"></table></div>
+        <div class="card-body">
+          <table style="width:100%;font-size:13px" id="doc-metadata-table"></table>
+        </div>
       </div>
     </div>
   </div>
 </div>
-
 <!-- ======================= PAGE: VALIDATION ======================= -->
 <div class="page" id="page-validation">
   <div id="validation-list" style="display:flex;flex-direction:column;gap:12px"></div>
